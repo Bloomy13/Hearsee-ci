@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hearsee Mobility — Competitive Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D1B2A;--bg2:#0A1520;--bg3:#152236;--bg4:#1A2B40;
+  --border:#1E3050;--border2:#243855;
+  --blue:#1E8FFF;--blue2:#1565B8;
+  --white:#F5F7FA;--muted:#8A9BB0;--faint:#4A6480;
+  --green:#1D9E75;--warn:#BA7517;--red:#C0392B;--purple:#7B6FDD;
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+}
+html,body{height:100%;background:var(--bg);color:var(--white);font-family:var(--font);font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sb{width:196px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sb-brand{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.sb-mark{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500}
+.sb-dot{width:9px;height:9px;border-radius:50%;background:var(--blue);flex-shrink:0}
+.sb-sub{font-size:9px;color:var(--faint);letter-spacing:1.2px;text-transform:uppercase;margin-top:2px}
+.sb-nav{padding:10px 8px;flex:1;overflow-y:auto}
+.nav-grp{font-size:9px;color:var(--faint);letter-spacing:1.2px;text-transform:uppercase;padding:10px 8px 4px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;font-size:12px;color:var(--muted);cursor:pointer;border-radius:6px;margin-bottom:1px;background:none;border:none;width:100%;text-align:left;font-family:var(--font);transition:all .15s}
+.ni:hover{background:rgba(30,143,255,.08);color:#c0d4e8}
+.ni.active{background:var(--blue);color:#fff}
+.ni svg{width:14px;height:14px;flex-shrink:0}
+.sb-foot{padding:10px 8px;border-top:1px solid var(--border)}
+.sb-user{padding:8px 10px;font-size:11px;color:var(--muted)}
+.sb-user-name{color:var(--white);font-weight:500}
+.sb-user-role{font-size:10px;color:var(--faint);margin-top:1px}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{padding:18px 22px 0;flex-shrink:0}
+.eyebrow{font-size:9px;font-weight:500;color:var(--blue);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px}
+.page-title{font-size:19px;font-weight:500;margin-bottom:2px}
+.page-sub{font-size:11px;color:var(--faint);margin-bottom:14px}
+.content{flex:1;overflow-y:auto;padding:0 22px 28px}
+.content::-webkit-scrollbar{width:3px}
+.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* PANELS */
+.panel{display:none}.panel.active{display:block}
+
+/* CARD */
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.card-hd{font-size:12px;font-weight:500;color:var(--white);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card-hd-sub{font-size:10px;color:var(--faint);font-weight:400}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.metric{background:var(--bg3);border-radius:10px;padding:13px 14px}
+.ml{font-size:10px;color:var(--faint);margin-bottom:3px}
+.mv{font-size:22px;font-weight:500}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:11px}
+.tbl th{font-size:10px;font-weight:500;color:var(--faint);text-align:left;padding:5px 7px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:8px 7px;border-bottom:1px solid var(--border);color:#C8D8E8;vertical-align:middle}
+.tbl tbody tr:last-child td{border:none}
+.tbl tbody tr.clickable{cursor:pointer}.tbl tbody tr.clickable:hover td{background:rgba(30,143,255,.05)}
+
+/* BARS */
+.mbar{display:inline-block;vertical-align:middle;width:52px;height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+.mbar-f{height:100%;border-radius:2px}
+.sbar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.sbar-lbl{font-size:11px;color:var(--muted);min-width:128px}
+.sbar-track{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.sbar-fill{height:100%;border-radius:3px;transition:width .3s}
+.sbar-num{font-size:11px;font-weight:500;min-width:38px;text-align:right;font-family:var(--mono)}
+
+/* PILLS */
+.pill{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.pg{background:rgba(29,158,117,.18);color:#1D9E75}
+.pb{background:rgba(30,143,255,.18);color:#6EB8FF}
+.pw{background:rgba(186,117,23,.18);color:#D4922A}
+.pr{background:rgba(192,57,43,.18);color:#E05C4F}
+.pgr{background:rgba(74,100,128,.18);color:var(--muted)}
+.ppu{background:rgba(123,111,221,.18);color:#A99FF5}
+
+/* SWOT */
+.swot-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.swot-cell{padding:10px 12px;border-radius:8px}
+.swot-t{font-size:9px;font-weight:500;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.swot-i{font-size:11px;color:var(--muted);padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);line-height:1.5}
+.swot-i:last-child{border:none}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:14px}
+.tab{font-size:11px;padding:7px 14px;color:var(--faint);cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font);transition:all .15s}
+.tab:hover{color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* ACTION ITEMS */
+.ai-row{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.ai-row:last-child{border:none}
+.ai-num{font-size:11px;font-weight:500;color:var(--blue);min-width:18px;font-family:var(--mono);padding-top:1px}
+.ai-body{flex:1}
+.ai-title{font-size:12px;color:#C8D8E8;line-height:1.5;margin-bottom:5px}
+.ai-meta{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:4px}
+.ai-note{font-size:10px;color:var(--faint);line-height:1.4}
+.ai-assign{display:flex;align-items:center;gap:6px;margin-top:6px}
+.ai-assign label{font-size:10px;color:var(--faint)}
+.ai-assign select{background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:10px;color:var(--muted);font-family:var(--font);cursor:pointer}
+.ai-assign select:focus{outline:none;border-color:var(--blue)}
+.status-sel{background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:10px;font-family:var(--font);cursor:pointer}
+.status-sel:focus{outline:none;border-color:var(--blue)}
+
+/* FORMS */
+.fl{font-size:9px;font-weight:500;color:var(--faint);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:4px}
+.fi{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px;color:var(--white);font-family:var(--font);outline:none;transition:border .15s}
+.fi:focus{border-color:var(--blue)}
+.fs{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px;color:var(--white);font-family:var(--font);outline:none;cursor:pointer}
+.fg{margin-bottom:10px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{padding:8px 16px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);border:none;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn-p{background:var(--blue);color:#fff}.btn-p:hover{background:var(--blue2)}
+.btn-g{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-g:hover{border-color:var(--muted);color:var(--white)}
+.btn-r{background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.3);color:#E05C4F}
+
+/* SLIDERS */
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:4px;background:var(--border2);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--blue);cursor:pointer;border:2px solid var(--bg3)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--blue);cursor:pointer;border:2px solid var(--bg3)}
+
+/* COMPARE */
+.co-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.co-pill{padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--faint);transition:all .15s}
+.co-pill.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.cmp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cmp-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px}
+.cmp-card.hs{border-color:var(--blue);border-width:1.5px}
+.cmp-total{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:16px;font-weight:500;text-align:right;font-family:var(--mono)}
+
+/* ADMIN */
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.team-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.team-row:last-child{border:none}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--muted);flex-shrink:0}
+.team-info{flex:1}
+.team-name{font-size:12px;font-weight:500;color:var(--white)}
+.team-email{font-size:10px;color:var(--faint)}
+.team-actions{display:flex;gap:6px;align-items:center}
+.role-badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px}
+.rb-admin{background:rgba(30,143,255,.2);color:#6EB8FF}
+.rb-user{background:rgba(29,158,117,.2);color:#1D9E75}
+.rb-viewer{background:rgba(74,100,128,.2);color:var(--muted)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:22px;width:400px;max-width:90vw}
+.modal-title{font-size:15px;font-weight:500;margin-bottom:16px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+
+/* CO LIST */
+.co-item{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;gap:12px}
+.co-item:last-child{border:none}
+.co-item:hover .co-name{color:var(--blue)}
+.co-rank{width:22px;height:22px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:var(--faint);flex-shrink:0;font-family:var(--mono)}
+.co-name{font-size:13px;font-weight:500;transition:color .15s}
+.co-meta{font-size:10px;color:var(--faint);margin-top:1px}
+
+/* BACK BTN */
+.back-btn{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-family:var(--font);margin-bottom:14px;transition:all .15s}
+.back-btn:hover{color:var(--white);border-color:var(--muted)}
+
+/* CHARTS */
+.chart-wrap{position:relative;width:100%;height:185px}
+.radar-wrap{position:relative;width:100%;height:185px}
+
+/* SAVE MSG */
+.save-msg{display:none;font-size:11px;padding:8px 12px;border-radius:6px;margin-top:8px}
+.sm-ok{background:rgba(29,158,117,.12);color:var(--green);border:1px solid rgba(29,158,117,.25)}
+.sm-err{background:rgba(192,57,43,.12);color:var(--red);border:1px solid rgba(192,57,43,.25)}
+
+/* DETAIL GRID */
+.d2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* NOTICE */
+.notice{padding:10px 14px;border-radius:8px;font-size:11px;line-height:1.6;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start}
+.notice-warn{background:rgba(186,117,23,.1);border:1px solid rgba(186,117,23,.2);color:#D4922A}
+.notice-info{background:rgba(30,143,255,.08);border:1px solid rgba(30,143,255,.15);color:#6EB8FF}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<nav class="sb">
+  <div class="sb-brand">
+    <div class="sb-mark"><div class="sb-dot"></div>Hearsee CI</div>
+    <div class="sb-sub">Competitive Intelligence</div>
+  </div>
+  <div class="sb-nav">
+    <div class="nav-grp">Overview</div>
+    <button class="ni active" onclick="go('dash')" id="nav-dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
+    <button class="ni" onclick="go('companies')" id="nav-companies"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M9 21V9l6-6v18M9 12H3v9"/></svg>Companies</button>
+    <button class="ni" onclick="go('compare')" id="nav-compare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4m0 0h18"/></svg>Compare</button>
+    <div class="nav-grp">Hearsee</div>
+    <button class="ni" onclick="go('actions')" id="nav-actions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Action items</button>
+    <button class="ni" onclick="go('review')" id="nav-review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>New review</button>
+    <div class="nav-grp">Settings</div>
+    <button class="ni" onclick="go('admin')" id="nav-admin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Team &amp; admin</button>
+  </div>
+  <div class="sb-foot">
+    <div class="sb-user">
+      <div class="sb-user-name" id="sb-username">James B.</div>
+      <div class="sb-user-role" id="sb-userrole">Admin · Hearsee Mobility</div>
+    </div>
+    <button class="ni" onclick="window.print()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>Print / export</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- ══════════════ DASHBOARD ══════════════ -->
+<div id="panel-dash" class="panel active">
+  <div class="topbar"><div class="eyebrow">Overview</div><div class="page-title">Competitive landscape</div><div class="page-sub">7 companies · April 25, 2026 · Public-evidence scorecard</div></div>
+  <div class="content">
+    <div class="metrics">
+      <div class="metric"><div class="ml">Companies tracked</div><div class="mv" style="color:var(--blue)">7</div></div>
+      <div class="metric"><div class="ml">Hearsee score</div><div class="mv" style="color:var(--warn)">64<span style="font-size:13px;color:var(--faint);font-weight:400"> /100</span></div></div>
+      <div class="metric"><div class="ml">Market leader</div><div class="mv" style="font-size:14px;line-height:1.4;color:var(--green);padding-top:4px">GoodMaps<br><span style="font-size:10px;color:var(--faint);font-weight:400">88/100 · B+</span></div></div>
+      <div class="metric"><div class="ml">Open actions</div><div class="mv" style="color:var(--blue)" id="open-action-count">8</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Score rankings <span class="card-hd-sub">click any row for full detail</span></div>
+      <table class="tbl"><thead><tr><th>#</th><th>Company</th><th>Score</th><th>Grade</th><th>Problem</th><th>Diff.</th><th>Traction</th><th>Scale</th><th>Evidence</th><th>Trust</th><th>Stage</th></tr></thead>
+      <tbody id="rank-tbody"></tbody></table>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="card"><div class="card-hd">Score distribution</div><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
+      <div class="card"><div class="card-hd">Avg by dimension</div><div class="radar-wrap"><canvas id="radarChart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Hearsee vs. market average <span class="card-hd-sub">+/− vs avg shown</span></div>
+      <div id="hs-vs-avg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ COMPANIES ══════════════ -->
+<div id="panel-companies" class="panel">
+  <div class="topbar"><div class="eyebrow" id="co-eyebrow">Company records</div><div class="page-title" id="co-title">All companies</div><div class="page-sub" id="co-sub">Click any company to view scores, SWOT, and actions</div></div>
+  <div class="content">
+    <div id="co-list-view"></div>
+    <div id="co-detail-view" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ══════════════ COMPARE ══════════════ -->
+<div id="panel-compare" class="panel">
+  <div class="topbar"><div class="eyebrow">Side by side</div><div class="page-title">Compare companies</div><div class="page-sub">Select companies to compare dimension by dimension</div></div>
+  <div class="content">
+    <div class="card"><div class="card-hd">Select companies</div><div class="co-pills" id="cmp-pills"></div></div>
+    <div id="cmp-cards"></div>
+    <div id="cmp-chart-wrap" style="display:none"><div class="card"><div class="card-hd">Radar comparison</div><div style="position:relative;width:100%;height:260px"><canvas id="cmpChart"></canvas></div></div></div>
+  </div>
+</div>
+
+<!-- ══════════════ ACTION ITEMS ══════════════ -->
+<div id="panel-actions" class="panel">
+  <div class="topbar"><div class="eyebrow">Hearsee priorities</div><div class="page-title">Action items</div><div class="page-sub" id="action-sub">8 items · assign owners · update status</div></div>
+  <div class="content">
+    <div class="notice notice-warn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span><strong>2 items need owners assigned</strong> — app-store listings and Utah Arts Academy case study are P1 critical with no owner yet. Assign below.</span>
+    </div>
+    <div class="card">
+      <div class="card-hd">
+        All actions
+        <div style="display:flex;gap:5px"><span class="pill pr">3 P1</span><span class="pill pw">4 P2</span><span class="pill pg">1 P3</span></div>
+      </div>
+      <div id="action-list"></div>
+    </div>
+    <div class="card" style="margin-top:0">
+      <div class="card-hd">Add new action item</div>
+      <div class="frow" style="margin-bottom:10px">
+        <div class="fg" style="margin:0"><label class="fl">Action description</label><input type="text" class="fi" id="new-action-text" placeholder="Describe the action..."></div>
+        <div class="fg" style="margin:0"><label class="fl">Dimension</label>
+          <select class="fs" id="new-action-dim"><option>Traction</option><option>Evidence</option><option>User Trust</option><option>Scalability</option><option>Problem Clarity</option><option>Differentiation</option><option>Overall</option></select>
+        </div>
+      </div>
+      <div class="frow" style="margin-bottom:10px">
+        <div class="fg" style="margin:0"><label class="fl">Priority</label>
+          <select class="fs" id="new-action-pri"><option>P1 - Critical</option><option>P2 - Important</option><option>P3 - Nice to have</option></select>
+        </div>
+        <div class="fg" style="margin:0"><label class="fl">Due date</label><input type="text" class="fi" id="new-action-due" placeholder="e.g. 7/1/2026"></div>
+      </div>
+      <div class="fg"><label class="fl">Notes</label><textarea class="fi" id="new-action-notes" rows="2" style="resize:vertical" placeholder="Additional context or success criteria..."></textarea></div>
+      <button class="btn btn-p" onclick="addAction()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add action item
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ NEW REVIEW ══════════════ -->
+<div id="panel-review" class="panel">
+  <div class="topbar"><div class="eyebrow">Quarterly review</div><div class="page-title">New competitive review</div><div class="page-sub">Score all six dimensions — total score and grade auto-calculate</div></div>
+  <div class="content">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div>
+        <div class="card">
+          <div class="card-hd">Company details</div>
+          <div class="fg"><label class="fl">Load existing company</label>
+            <select class="fs" id="r-co" onchange="prefill(this.value)">
+              <option value="">— select to pre-fill —</option>
+              <option>Hearsee Mobility</option><option>GoodMaps</option><option>Waymap</option>
+              <option>NaviLens</option><option>RightHear</option><option>WeWALK</option><option>Glidance / Glide</option>
+              <option value="new">+ New company</option>
+            </select>
+          </div>
+          <div class="frow" style="margin-bottom:10px">
+            <div class="fg" style="margin:0"><label class="fl">Review date</label><input type="text" class="fi" id="r-date" value="05/15/2026"></div>
+            <div class="fg" style="margin:0"><label class="fl">Reviewer</label>
+              <select class="fs" id="r-reviewer"><option>James B.</option><option>Sarah K.</option><option>Marcus T.</option><option>Priya N.</option></select>
+            </div>
+          </div>
+          <div class="fg" style="margin-bottom:10px"><label class="fl">Stage</label>
+            <select class="fs" id="r-stage"><option>Early pilot</option><option>Growth / scaling</option><option>Mature / enterprise</option></select>
+          </div>
+          <div class="fg"><label class="fl">Positioning (one line)</label><input type="text" class="fi" id="r-pos" placeholder="One-line description of their approach"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd">Strengths &amp; gaps</div>
+          <div class="fg"><label class="fl">Key strengths (one per line)</label><textarea class="fi" id="r-str" rows="3" style="resize:vertical"></textarea></div>
+          <div class="fg" style="margin:0"><label class="fl">Key gaps (one per line)</label><textarea class="fi" id="r-gaps" rows="3" style="resize:vertical"></textarea></div>
+        </div>
+        <div class="card">
+          <div class="card-hd">Assessment notes</div>
+          <textarea class="fi" id="r-notes" rows="4" style="resize:vertical" placeholder="Overall rationale, key observations..."></textarea>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-hd">Score each dimension</div>
+          <div id="sliders"></div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:11px;color:var(--faint)">Total score</span>
+            <span id="r-total" style="font-size:24px;font-weight:500;font-family:var(--mono);color:var(--faint)">0<span style="font-size:13px;color:var(--faint);font-weight:400"> /100</span></span>
+          </div>
+          <div style="text-align:right;margin-top:3px"><span id="r-grade" style="font-size:11px;color:var(--blue)"></span></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:2px;flex-wrap:wrap">
+          <button class="btn btn-p" onclick="saveReview()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save review
+          </button>
+          <button class="btn btn-g" onclick="clearReview()">Clear form</button>
+          <button class="btn btn-g" onclick="exportReview()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+        </div>
+        <div class="save-msg" id="save-msg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ ADMIN ══════════════ -->
+<div id="panel-admin" class="panel">
+  <div class="topbar"><div class="eyebrow">Settings</div><div class="page-title">Team &amp; admin</div><div class="page-sub">Manage team members, roles, and permissions</div></div>
+  <div class="content">
+    <div class="admin-grid">
+      <div>
+        <div class="card">
+          <div class="card-hd">
+            Team members
+            <button class="btn btn-p" style="font-size:10px;padding:4px 10px" onclick="showInviteModal()">+ Invite</button>
+          </div>
+          <div id="team-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd">Role permissions</div>
+          <table class="tbl">
+            <thead><tr><th>Permission</th><th>Admin</th><th>User</th><th>Viewer</th></tr></thead>
+            <tbody>
+              <tr><td>View all screens</td><td>✓</td><td>✓</td><td>✓</td></tr>
+              <tr><td>Score companies</td><td>✓</td><td>✓</td><td>—</td></tr>
+              <tr><td>Edit action items</td><td>✓</td><td>✓</td><td>—</td></tr>
+              <tr><td>Assign action owners</td><td>✓</td><td>✓</td><td>—</td></tr>
+              <tr><td>Add companies</td><td>✓</td><td>—</td><td>—</td></tr>
+              <tr><td>Manage team members</td><td>✓</td><td>—</td><td>—</td></tr>
+              <tr><td>Export data</td><td>✓</td><td>✓</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-hd">Activity log</div>
+          <div id="activity-log"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd">Dashboard settings</div>
+          <div class="fg"><label class="fl">Organization name</label><input type="text" class="fi" value="Hearsee Mobility"></div>
+          <div class="fg"><label class="fl">Review cycle</label>
+            <select class="fs"><option>Quarterly</option><option>Monthly</option><option>Bi-annual</option></select>
+          </div>
+          <div class="fg"><label class="fl">Next review due</label><input type="text" class="fi" value="July 25, 2026"></div>
+          <div class="fg" style="margin:0"><label class="fl">Export format</label>
+            <select class="fs"><option>Plain text (.txt)</option><option>CSV (.csv)</option></select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- INVITE MODAL -->
+<div class="modal-overlay" id="invite-modal">
+  <div class="modal">
+    <div class="modal-title">Invite team member</div>
+    <div class="fg"><label class="fl">Full name</label><input type="text" class="fi" id="inv-name" placeholder="e.g. Sarah Kim"></div>
+    <div class="fg"><label class="fl">Email address</label><input type="text" class="fi" id="inv-email" placeholder="sarah@hearseemobility.org"></div>
+    <div class="fg" style="margin:0"><label class="fl">Role</label>
+      <select class="fs" id="inv-role"><option value="admin">Admin — full access</option><option value="user" selected>User — score and edit</option><option value="viewer">Viewer — read only</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-g" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" onclick="inviteMember()">Send invite</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATS=[
+  {id:'problem',label:'Problem clarity',weight:20},
+  {id:'diff',label:'Differentiation',weight:20},
+  {id:'traction',label:'Traction',weight:20},
+  {id:'scale',label:'Scalability',weight:15},
+  {id:'evidence',label:'Evidence',weight:15},
+  {id:'trust',label:'User trust',weight:10},
+];
+
+const COMPANIES=[
+  {name:'GoodMaps',stage:'Growth / scaling',pos:'LiDAR/camera-based indoor mapping and mobile app',problem:18,diff:16,traction:17,scale:13,evidence:13,trust:11,notes:'Market leader by public evidence. Strong venue tooling and enterprise partnerships.',strengths:['Broadest venue footprint','Strong enterprise tooling and admin portal','Deep research partnerships','No special hardware for end users'],gaps:['High per-venue mapping cost limits deployment','Premium pricing excludes nonprofits','Less cane-first than Hearsee'],swot:{S:['Market-leading score 88/100','Venue tooling maturity: mapping portal, admin dashboard','Strong enterprise and transit partnerships','No-special-hardware end-user model'],W:['Mapping is labor-intensive and expensive per venue','Less differentiated from phone-only competitors','Premium pricing excludes small nonprofits'],O:['International expansion into EU compliance markets','AI-assisted mapping to reduce cost','White-label licensing to transit operators'],T:["Waymap's zero-infrastructure model undercuts on simplicity","Hearsee competing for school and museum segment","Apple/Google indoor maps improving"]}},
+  {name:'Waymap',stage:'Growth / scaling',pos:'Phone-sensor navigation — no GPS, Wi-Fi, Bluetooth, or beacons required',problem:17,diff:18,traction:15,scale:14,evidence:12,trust:10,notes:'Unique zero-infrastructure model. Highest differentiation score. Less integrated with physical cane.',strengths:['Zero infrastructure requirement','Scales globally without venue hardware','Strongest scalability story in category'],gaps:['Phone-only misses cane-primary users','Validation depth thinner than GoodMaps','Fewer named case studies'],swot:{S:['Unique technical moat: no signal dependency','Scales to any building without hardware','Strong investor story — high margin potential'],W:['Phone-only may not serve O&M-trained users','Published outcome data thinner than GoodMaps','App trust signals below market leader'],O:['Developing-market expansion where beacons are absent','License sensing engine to smart cane makers','Partner with WHO/UN disability programs'],T:["GoodMaps has stronger enterprise infrastructure","Hearsee's physical integration preferred by O&M users","Commoditization risk if Apple/Google replicate"]}},
+  {name:'NaviLens',stage:'Growth / scaling',pos:'Accessible visual-code signage readable at distance without precise aiming',problem:16,diff:17,traction:14,scale:13,evidence:12,trust:11,notes:'Easiest value prop to explain. Strong transit momentum. Signage only — not full route navigation.',strengths:['Easiest value proposition to explain','Modular — each code adds independent value','Strong transit and museum momentum'],gaps:['Signage only — not continuous navigation','Dependent on venue code placement quality'],swot:{S:['Category-defining accessible QR-like codes','Modular deployment adds value without full commitment','Strong transit momentum'],W:['Not a full indoor navigation system','Route guidance requires codes at every decision point','Venue code placement quality uneven'],O:['Retail and healthcare signage mandates','Partner with GoodMaps/Waymap for navigation bundles','Expand into grocery and pharmacy labeling'],T:['GoodMaps offers continuous navigation at enterprise scale','AI vision could replicate label-reading','Standardization could commoditize visual code format']}},
+  {name:'RightHear',stage:'Growth / scaling',pos:'Audio orientation and indoor/outdoor signage system for venues',problem:15,diff:14,traction:15,scale:13,evidence:12,trust:11,notes:'Most commercially deployed among mid-tier. Orientation only — not continuous navigation.',strengths:['Commercially deployed across venue types','Simple venue installation','Active in airports and hospitals'],gaps:['Orientation only — not continuous navigation','Positioning overlaps with NaviLens','Limited published outcome data'],swot:{S:['Most commercially deployed among mid-tier','Simple venue buyer journey','Active in high-value sectors: airports, hospitals, retail'],W:['Audio beacons are orientation not navigation','Thin published outcome data','Product story overlaps with NaviLens'],O:['ADA compliance urgency in US healthcare','Partner with GoodMaps for full navigation bundle','Smart building platform integrations'],T:['NaviLens has stronger signage visual identity','GoodMaps offers more complete navigation','Smartphone OS features may replicate orientation natively']}},
+  {name:'WeWALK',stage:'Growth / scaling',pos:'Consumer smart cane with obstacle detection, voice navigation, and AI features',problem:16,diff:15,traction:13,scale:11,evidence:12,trust:9,notes:'Strongest consumer smart-cane brand. Obstacle detection is a genuine hardware differentiator.',strengths:['Strongest consumer smart-cane brand','Obstacle detection hardware differentiator','Growing AI feature set'],gaps:['High unit cost limits market','No venue-installed navigation layer','Indoor navigation relies on third-party apps'],swot:{S:['Only smart cane with meaningful brand recognition','Obstacle detection is a genuine safety differentiator','AI voice assistant integration appeals to tech-forward users'],W:['High unit cost excludes lower-income users','No venue mapping layer','App ecosystem fragmented — relies on integrations'],O:['Partnership with Hearsee for RFID-compatible cane','Bundle with GoodMaps/Waymap for complete kit','Enterprise procurement through schools and vocational rehab'],T:['Glidance AI device could leapfrog smart cane category','Lower-cost competitors eroding hardware differentiation','Phone AI obstacle detection narrowing advantage']}},
+  {name:'Hearsee Mobility',stage:'Early pilot',pos:'RFID-tagged indoor environments + smart cane + audio guidance',problem:17,diff:15,traction:7,scale:9,evidence:10,trust:6,notes:'Strong mission clarity and cane-first design. Traction is the key gap — only one named pilot publicly.',strengths:['Clear indoor navigation focus','Cane-first design respects O&M practice','Strong nonprofit mission fit','Real pilot at Utah Arts Academy'],gaps:['Visible deployment scale is thin','RFID tagging and cane compatibility add friction','Limited quantified outcome data','Buyer packaging and cost model unclear','App-store trust signals need polish'],swot:{S:['Distinctive cane-first RFID model — no direct clone','501(c)(3) structure unlocks grants and school budgets','Community-centered design builds authentic user trust','Clear target wedge: schools, museums, hospitals, campuses'],W:['Lowest public-evidence traction score (7/20)','Requires venue tagging AND compatible cane — two dependencies','No published outcome metrics: success rates, error rates','App-store presence thin versus mature competitors'],O:['ADA mandates create institutional urgency','No competitor owns the school + museum category end-to-end','Federal and state accessibility grants available','O&M specialist partnerships as validators and channel'],T:['GoodMaps and Waymap expanding venue coverage rapidly','Phone-only models require zero hardware — simpler pitch','AI wearables could leapfrog venue-installed infrastructure','Tight school IT budgets may delay RFID procurement']}},
+  {name:'Glidance / Glide',stage:'Early pilot',pos:'AI robotic mobility aid that physically guides the user',problem:15,diff:18,traction:5,scale:6,evidence:7,trust:9,notes:'Highest differentiation in category. Still pre-commercial. Lowest traction score.',strengths:['Most futuristic concept in category','Physical guidance eliminates map-reading entirely','High media and investor attention'],gaps:['Still pre-commercial — no live deployments','Lowest traction score (5/20)','No safety certification published'],swot:{S:['Highest differentiation score (18/20) — no comparable product','AI-physical guidance is a paradigm shift','Strong media narrative drives awareness'],W:['Pre-commercial — no deployments at scale','Physical device adds weight, charging, maintenance burden','O&M independence philosophy may conflict'],O:['First-mover advantage in robotic guide category','License AI guidance engine to smart cane makers','Partner with transit for pre-deployed shared units'],T:['Long timeline lets GoodMaps and Waymap entrench','AI phone navigation improving rapidly','Regulatory questions around AI physical guidance']}},
+];
+
+let ACTIONS=[
+  {id:1,text:'Rewrite both app-store listings with full accessibility declarations',dim:'User Trust',priority:'P1',due:'5/20/2026',status:'Not started',owner:'',note:'Add: VoiceOver/TalkBack compatibility, privacy summary, system requirements, support contact, update history.'},
+  {id:2,text:'Publish Utah Arts Academy case study with hard metrics',dim:'Traction',priority:'P1',due:'6/1/2026',status:'In progress',owner:'James B.',note:'Include: routes mapped, user success rate, time-to-destination before/after, user confidence scores.'},
+  {id:3,text:'Publish standalone privacy policy page on website',dim:'User Trust',priority:'P1',due:'6/15/2026',status:'Not started',owner:'',note:'Cover: what data is collected, how it is used, whether shared with venue operators, how users can request deletion.'},
+  {id:4,text:'Apply for 2–3 federal or state accessibility grants',dim:'Evidence',priority:'P2',due:'6/30/2026',status:'In progress',owner:'James B.',note:'Use Utah Arts Academy data as proof. Target ACL, NIH Phase I SBIR, and state AT program grants.'},
+  {id:5,text:'Initiate NFB technology evaluation outreach',dim:'User Trust',priority:'P2',due:'7/1/2026',status:'Not started',owner:'',note:'Contact National Federation of the Blind technology evaluation program.'},
+  {id:6,text:'Build separate buyer pages for schools, museums, hospitals, campuses',dim:'Scalability',priority:'P2',due:'7/15/2026',status:'Not started',owner:'',note:'Each page needs: cost model, install timeline, maintenance plan, support package.'},
+  {id:7,text:'Publish live deployment map with venue count and pipeline',dim:'Traction',priority:'P2',due:'7/30/2026',status:'Not started',owner:'',note:'Show active venues, pilot venues, and implementation pipeline.'},
+  {id:8,text:'Partner with two O&M specialist organizations for co-validation',dim:'Evidence',priority:'P3',due:'8/30/2026',status:'Not started',owner:'',note:'Target: AER and a regional O&M specialist network.'},
+];
+
+let TEAM=[
+  {id:1,name:'James B.',email:'james@hearseemobility.org',role:'admin',initials:'JB',joined:'Jan 2025'},
+  {id:2,name:'Sarah K.',email:'sarah@hearseemobility.org',role:'user',initials:'SK',joined:'Mar 2025'},
+  {id:3,name:'Marcus T.',email:'marcus@hearseemobility.org',role:'user',initials:'MT',joined:'Apr 2025'},
+  {id:4,name:'Priya N.',email:'priya@hearseemobility.org',role:'viewer',initials:'PN',joined:'May 2025'},
+];
+
+let ACTIVITY=[
+  {who:'James B.',what:'Updated Utah Arts Academy case study status to In progress',when:'Today 9:14am'},
+  {who:'Sarah K.',what:'Added new action item: Apply for ACL grant',when:'Yesterday 4:02pm'},
+  {who:'Marcus T.',what:'Completed review for WeWALK (76/100)',when:'Apr 28 11:30am'},
+  {who:'James B.',what:'Invited Priya N. as Viewer',when:'Apr 27 3:15pm'},
+  {who:'Sarah K.',what:'Updated GoodMaps score to 88/100',when:'Apr 25 10:00am'},
+];
+
+let fScores={problem:0,diff:0,traction:0,scale:0,evidence:0,trust:0};
+let cmpSel=new Set(['Hearsee Mobility','GoodMaps','Waymap']);
+let barC=null,radC=null,cmpC=null;
+let nextActionId=9;
+
+function gc(t){if(t>=80)return'#1D9E75';if(t>=65)return'#1E8FFF';if(t>=50)return'#BA7517';return'#C0392B';}
+function tot(r){return CATS.reduce((s,c)=>s+(r[c.id]||0),0);}
+function pct(v,w){return Math.round(v/w*100);}
+function grd(t){if(t>=90)return'A';if(t>=80)return'B+';if(t>=75)return'B';if(t>=70)return'B-';if(t>=65)return'C+';if(t>=60)return'C';if(t>=55)return'C-';if(t>=50)return'D+';return'D';}
+function ro(t){if(t>=85)return'Market-ready';if(t>=75)return'Solid — growing traction';if(t>=65)return'Promising but early-stage';if(t>=55)return'Developing — evidence gaps';return'Very early';}
+function bar(v,w){const p=pct(v,w);return`<div class="mbar"><div class="mbar-f" style="width:${p}%;background:${gc(p)}"></div></div>`;}
+function spill(p){return p==='P1'?'<span class="pill pr">P1</span>':p==='P2'?'<span class="pill pw">P2</span>':'<span class="pill pg">P3</span>';}
+function sstatus(s){return s==='In progress'?'<span class="pill pb">In progress</span>':s==='Complete'?'<span class="pill pg">Complete</span>':'<span class="pill pgr">Not started</span>';}
+
+function go(p){
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
+  document.getElementById('panel-'+p).classList.add('active');
+  document.getElementById('nav-'+p).classList.add('active');
+  if(p==='compare')renderCmp();
+  if(p==='admin'){renderTeam();renderActivity();}
+  if(p==='actions')renderActions();
+}
+
+// ── DASHBOARD ──
+function buildRank(){
+  const sorted=[...COMPANIES].sort((a,b)=>tot(b)-tot(a));
+  document.getElementById('rank-tbody').innerHTML=sorted.map((r,i)=>{
+    const t=tot(r);
+    return`<tr class="clickable" onclick="viewCo('${r.name}')">
+<td style="color:var(--faint);font-family:var(--mono)">${i+1}</td>
+<td style="font-weight:500;color:${r.name==='Hearsee Mobility'?'var(--blue)':'#D8E8F0'}">${r.name}</td>
+<td style="font-weight:500;font-family:var(--mono);color:${gc(t)}">${t}</td>
+<td><span class="pill ${t>=80?'pg':t>=65?'pb':'pw'}">${grd(t)}</span></td>
+<td>${bar(r.problem,20)} <span style="font-size:10px;color:var(--faint);font-family:var(--mono)">${r.problem}</span></td>
+<td>${bar(r.diff,20)} <span style="font-size:10px;color:var(--faint);font-family:var(--mono)">${r.diff}</span></td>
+<td>${bar(r.traction,20)} <span style="font-size:10px;color:${r.traction<=7?'var(--red)':'var(--faint)'};font-family:var(--mono)">${r.traction}</span></td>
+<td>${bar(r.scale,15)} <span style="font-size:10px;color:var(--faint);font-family:var(--mono)">${r.scale}</span></td>
+<td>${bar(r.evidence,15)} <span style="font-size:10px;color:var(--faint);font-family:var(--mono)">${r.evidence}</span></td>
+<td>${bar(r.trust,10)} <span style="font-size:10px;color:${r.trust<=6?'var(--red)':'var(--faint)'};font-family:var(--mono)">${r.trust}</span></td>
+<td><span class="pill ${r.stage==='Early pilot'?'pw':'pgr'}">${r.stage==='Early pilot'?'Early':'Growth'}</span></td>
+</tr>`;}).join('');
+}
+
+function buildCharts(){
+  const sorted=[...COMPANIES].sort((a,b)=>tot(b)-tot(a));
+  if(barC)barC.destroy();
+  barC=new Chart(document.getElementById('barChart'),{
+    type:'bar',
+    data:{labels:sorted.map(r=>r.name.replace(' Mobility','').replace(' / Glide','')),datasets:[{data:sorted.map(r=>tot(r)),backgroundColor:sorted.map(r=>gc(tot(r))+'BB'),borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{color:'#4A6480',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#4A6480',font:{size:9},maxRotation:30},grid:{display:false}}}}
+  });
+  const fields=['problem','diff','traction','scale','evidence','trust'];
+  const weights=[20,20,20,15,15,10];
+  const avgs=fields.map((f,i)=>Math.round(COMPANIES.reduce((s,r)=>s+r[f],0)/COMPANIES.length/weights[i]*100));
+  if(radC)radC.destroy();
+  radC=new Chart(document.getElementById('radarChart'),{
+    type:'radar',
+    data:{labels:['Problem','Diff.','Traction','Scale','Evidence','Trust'],datasets:[{label:'Avg %',data:avgs,backgroundColor:'rgba(30,143,255,0.12)',borderColor:'#1E8FFF',borderWidth:1.5,pointBackgroundColor:'#1E8FFF',pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{min:0,max:100,ticks:{stepSize:25,color:'#4A6480',font:{size:9},backdropColor:'transparent'},grid:{color:'rgba(255,255,255,0.05)'},pointLabels:{color:'#4A6480',font:{size:10}}}}}
+  });
+}
+
+function buildHsVsAvg(){
+  const h=COMPANIES.find(r=>r.name==='Hearsee Mobility');
+  const fields=['problem','diff','traction','scale','evidence','trust'];
+  const weights=[20,20,20,15,15,10];
+  const labels=['Problem clarity','Differentiation','Traction','Scalability','Evidence','User trust'];
+  let html='';
+  fields.forEach((f,i)=>{
+    const hv=h[f],hw=weights[i];
+    const avg=COMPANIES.reduce((s,r)=>s+r[f],0)/COMPANIES.length;
+    const hp=pct(hv,hw),ap=Math.round(avg/hw*100);
+    const diff=hv-avg,dc=diff>=0?'var(--green)':'var(--red)',ds=(diff>=0?'+':'')+diff.toFixed(1);
+    html+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+<span style="font-size:11px;color:var(--muted);min-width:128px">${labels[i]}</span>
+<div style="flex:1;position:relative;height:16px;background:rgba(255,255,255,.04);border-radius:3px;overflow:hidden">
+<div style="position:absolute;left:0;top:0;height:100%;width:${ap}%;background:rgba(255,255,255,.08);border-radius:3px"></div>
+<div style="position:absolute;left:0;top:0;height:100%;width:${hp}%;background:${gc(hp)}BB;border-radius:3px"></div>
+</div>
+<span style="font-size:11px;font-family:var(--mono);color:${gc(hp)};min-width:32px;text-align:right">${hv}/${hw}</span>
+<span style="font-size:10px;font-family:var(--mono);color:${dc};min-width:34px;text-align:right">${ds}</span>
+</div>`;
+  });
+  html+=`<div style="display:flex;gap:14px;margin-top:8px;font-size:10px;color:var(--faint)">
+<span><span style="display:inline-block;width:10px;height:4px;background:var(--blue);border-radius:2px;margin-right:4px;vertical-align:middle"></span>Hearsee</span>
+<span><span style="display:inline-block;width:10px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin-right:4px;vertical-align:middle"></span>Market avg</span>
+<span style="margin-left:auto">± vs market avg</span></div>`;
+  document.getElementById('hs-vs-avg').innerHTML=html;
+}
+
+// ── COMPANIES ──
+function buildCoList(){
+  const sorted=[...COMPANIES].sort((a,b)=>tot(b)-tot(a));
+  document.getElementById('co-list-view').innerHTML=`<div class="card"><div class="card-hd">All companies <span class="card-hd-sub">sorted by score · click to view detail</span></div>${
+  sorted.map((r,i)=>{const t=tot(r);return`<div class="co-item" onclick="viewCo('${r.name}')">
+<div class="co-rank">${i+1}</div>
+<div style="flex:1">
+<div class="co-name" style="${r.name==='Hearsee Mobility'?'color:var(--blue)':''}">${r.name}</div>
+<div class="co-meta">${ro(t)} · ${r.stage}</div>
+<div style="display:flex;gap:4px;margin-top:5px">${CATS.map(c=>{const v=r[c.id];const p=pct(v,c.weight);return`<div class="mbar" style="width:40px" title="${c.label}: ${v}/${c.weight}"><div class="mbar-f" style="width:${p}%;background:${gc(p)}"></div></div>`;}).join('')}</div>
+</div>
+<div style="text-align:right;flex-shrink:0;padding-left:12px">
+<div style="font-size:22px;font-weight:500;font-family:var(--mono);color:${gc(t)}">${t}</div>
+<div style="font-size:10px;color:var(--faint)">${grd(t)} · Apr 25, 2026</div>
+</div>
+</div>`;}).join('')}</div>`;
+}
+
+function viewCo(name){
+  const r=COMPANIES.find(x=>x.name===name);if(!r)return;
+  go('companies');
+  document.getElementById('co-eyebrow').textContent='Company record';
+  document.getElementById('co-title').textContent=name;
+  document.getElementById('co-sub').textContent=ro(tot(r))+' · '+r.stage;
+  document.getElementById('co-list-view').style.display='none';
+  const dv=document.getElementById('co-detail-view');dv.style.display='block';
+  const t=tot(r);
+  dv.innerHTML=`
+<button class="back-btn" onclick="backToCoList()">← All companies</button>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+<div><div style="font-size:18px;font-weight:500;color:${r.name==='Hearsee Mobility'?'var(--blue)':'var(--white)'}">${r.name}</div><div style="font-size:11px;color:var(--faint);margin-top:2px">${r.pos}</div></div>
+<div style="text-align:right"><div style="font-size:30px;font-weight:500;font-family:var(--mono);color:${gc(t)}">${t}</div><div style="font-size:11px;color:var(--faint)">${grd(t)} · Apr 25, 2026</div></div>
+</div>
+<div class="tabs">
+<button class="tab active" onclick="coTab(this,'cot-overview')">Overview</button>
+<button class="tab" onclick="coTab(this,'cot-swot')">SWOT analysis</button>
+<button class="tab" onclick="coTab(this,'cot-actions')">Actions${r.name==='Hearsee Mobility'?' ('+ACTIONS.length+')':' (0)'}</button>
+</div>
+<div id="cot-overview">
+<div class="d2">
+<div>
+<div class="card"><div class="card-hd">Score breakdown</div>
+${CATS.map(c=>{const v=r[c.id];const p=pct(v,c.weight);return`<div class="sbar-row"><span class="sbar-lbl">${c.label}</span><div class="sbar-track"><div class="sbar-fill" style="width:${p}%;background:${gc(p)}"></div></div><span class="sbar-num" style="color:${gc(p)}">${v}/${c.weight}</span></div>`;}).join('')}
+<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between"><span style="font-size:11px;color:var(--faint)">Total</span><span style="font-size:18px;font-weight:500;font-family:var(--mono);color:${gc(t)}">${t} / 100</span></div></div>
+${r.notes?`<div class="card"><div class="card-hd">Assessment notes</div><div style="font-size:12px;color:var(--muted);line-height:1.6">${r.notes}</div></div>`:''}
+</div>
+<div>
+<div class="card" style="border-left:3px solid var(--green);border-radius:0 8px 8px 0"><div class="card-hd" style="color:var(--green)">Strengths</div>${r.strengths.map(s=>`<div style="font-size:11px;color:var(--muted);padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);line-height:1.5">+ ${s}</div>`).join('')}</div>
+<div class="card" style="border-left:3px solid var(--red);border-radius:0 8px 8px 0"><div class="card-hd" style="color:var(--red)">Gaps</div>${r.gaps.map(g=>`<div style="font-size:11px;color:var(--muted);padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);line-height:1.5">− ${g}</div>`).join('')}</div>
+</div>
+</div>
+</div>
+<div id="cot-swot" style="display:none">
+<div class="swot-grid">
+<div class="swot-cell" style="background:rgba(29,158,117,.08);border:1px solid rgba(29,158,117,.15)"><div class="swot-t" style="color:var(--green)">Strengths</div>${r.swot.S.map(x=>`<div class="swot-i">${x}</div>`).join('')}</div>
+<div class="swot-cell" style="background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.15)"><div class="swot-t" style="color:var(--red)">Weaknesses</div>${r.swot.W.map(x=>`<div class="swot-i">${x}</div>`).join('')}</div>
+<div class="swot-cell" style="background:rgba(30,143,255,.08);border:1px solid rgba(30,143,255,.15)"><div class="swot-t" style="color:#6EB8FF">Opportunities</div>${r.swot.O.map(x=>`<div class="swot-i">${x}</div>`).join('')}</div>
+<div class="swot-cell" style="background:rgba(186,117,23,.08);border:1px solid rgba(186,117,23,.15)"><div class="swot-t" style="color:var(--warn)">Threats</div>${r.swot.T.map(x=>`<div class="swot-i">${x}</div>`).join('')}</div>
+</div>
+</div>
+<div id="cot-actions" style="display:none">
+${r.name==='Hearsee Mobility'?`<div class="card"><div class="card-hd">Action items for Hearsee Mobility</div><div id="co-action-list"></div></div>`:'<div style="font-size:12px;color:var(--faint);padding:20px 0;text-align:center">No action items for this company.</div>'}
+</div>`;
+  if(r.name==='Hearsee Mobility')renderCoActions();
+}
+
+function renderCoActions(){
+  const el=document.getElementById('co-action-list');
+  if(!el)return;
+  el.innerHTML=ACTIONS.map((a,i)=>`<div class="ai-row">
+<span class="ai-num">${i+1}</span>
+<div class="ai-body">
+<div class="ai-title">${a.text}</div>
+<div class="ai-meta">${spill(a.priority)}<span class="pill pb">${a.dim}</span>${sstatus(a.status)}<span style="font-size:10px;color:var(--faint)">Due ${a.due}</span></div>
+${a.owner?`<div style="font-size:10px;color:var(--faint)">Owner: <span style="color:var(--muted)">${a.owner}</span></div>`:'<div style="font-size:10px;color:var(--red)">⚠ No owner assigned</div>'}
+</div>
+</div>`).join('');
+}
+
+function coTab(el,id){
+  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  ['cot-overview','cot-swot','cot-actions'].forEach(x=>{const e=document.getElementById(x);if(e)e.style.display='none';});
+  document.getElementById(id).style.display='block';
+  if(id==='cot-actions')renderCoActions();
+}
+
+function backToCoList(){
+  document.getElementById('co-list-view').style.display='block';
+  document.getElementById('co-detail-view').style.display='none';
+  document.getElementById('co-eyebrow').textContent='Company records';
+  document.getElementById('co-title').textContent='All companies';
+  document.getElementById('co-sub').textContent='Click any company to view scores, SWOT, and actions';
+}
+
+// ── COMPARE ──
+function buildCmpPills(){
+  document.getElementById('cmp-pills').innerHTML=COMPANIES.map(r=>`<span class="co-pill${cmpSel.has(r.name)?' on':''}" onclick="toggleCmp('${r.name}',this)">${r.name.replace(' Mobility','').replace(' / Glide','')}</span>`).join('');
+}
+
+function toggleCmp(name,el){
+  if(cmpSel.has(name)){if(cmpSel.size>1)cmpSel.delete(name);}else cmpSel.add(name);
+  el.classList.toggle('on',cmpSel.has(name));renderCmp();
+}
+
+function renderCmp(){
+  const sel=COMPANIES.filter(r=>cmpSel.has(r.name));
+  const cols=Math.min(sel.length,3);
+  document.getElementById('cmp-cards').innerHTML=`<div class="cmp-grid" style="grid-template-columns:repeat(${cols},1fr)">${
+  sel.map(r=>{const t=tot(r);return`<div class="cmp-card${r.name==='Hearsee Mobility'?' hs':''}">
+<div style="font-size:12px;font-weight:500;margin-bottom:10px;color:${r.name==='Hearsee Mobility'?'var(--blue)':'var(--white)'}">${r.name}</div>
+${CATS.map(c=>{const v=r[c.id];const p=pct(v,c.weight);return`<div class="sbar-row" style="margin-bottom:6px"><span style="font-size:10px;color:var(--faint);min-width:58px">${c.label.split(' ')[0]}</span><div class="sbar-track"><div class="sbar-fill" style="width:${p}%;background:${gc(p)}"></div></div><span style="font-size:10px;font-family:var(--mono);color:${gc(p)};min-width:24px;text-align:right">${v}</span></div>`;}).join('')}
+<div class="cmp-total" style="color:${gc(t)}">${t} · ${grd(t)}</div>
+</div>`;}).join('')}</div>`;
+  const wrap=document.getElementById('cmp-chart-wrap');
+  if(sel.length>=2){
+    wrap.style.display='block';
+    const colors=['#1E8FFF','#1D9E75','#BA7517','#C0392B','#9B59B6','#E67E22','#1ABC9C'];
+    const fields=['problem','diff','traction','scale','evidence','trust'];const weights=[20,20,20,15,15,10];
+    const datasets=sel.map((r,i)=>({label:r.name,data:fields.map((f,j)=>Math.round(r[f]/weights[j]*100)),backgroundColor:colors[i%colors.length]+'25',borderColor:colors[i%colors.length],borderWidth:1.5,pointBackgroundColor:colors[i%colors.length],pointRadius:3}));
+    if(cmpC)cmpC.destroy();
+    cmpC=new Chart(document.getElementById('cmpChart'),{type:'radar',data:{labels:['Problem','Diff.','Traction','Scale','Evidence','Trust'],datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{min:0,max:100,ticks:{stepSize:25,color:'#4A6480',font:{size:9},backdropColor:'transparent'},grid:{color:'rgba(255,255,255,0.05)'},pointLabels:{color:'#4A6480',font:{size:10}}}}}});
+  }else wrap.style.display='none';
+}
+
+// ── ACTIONS ──
+function renderActions(){
+  const members=['',  ...TEAM.map(t=>t.name)];
+  document.getElementById('action-list').innerHTML=ACTIONS.map((a,i)=>`<div class="ai-row">
+<span class="ai-num">${i+1}</span>
+<div class="ai-body">
+<div class="ai-title">${a.text}</div>
+<div class="ai-meta">
+${spill(a.priority)}
+<span class="pill pb">${a.dim}</span>
+<select class="status-sel" id="st-${a.id}" onchange="updateStatus(${a.id},this.value)" style="color:${a.status==='In progress'?'#6EB8FF':a.status==='Complete'?'#1D9E75':'var(--muted)'}">
+<option${a.status==='Not started'?' selected':''}>Not started</option>
+<option${a.status==='In progress'?' selected':''}>In progress</option>
+<option${a.status==='Complete'?' selected':''}>Complete</option>
+<option${a.status==='Blocked'?' selected':''}>Blocked</option>
+</select>
+<span style="font-size:10px;color:var(--faint)">Due ${a.due}</span>
+</div>
+<div class="ai-note">${a.note}</div>
+<div class="ai-assign">
+<label>Owner:</label>
+<select id="ow-${a.id}" onchange="updateOwner(${a.id},this.value)" style="color:${a.owner?'var(--white)':'var(--red)'}">
+${members.map(m=>`<option value="${m}"${a.owner===m?' selected':''}>${m||'— assign owner —'}</option>`).join('')}
+</select>
+${!a.owner?'<span style="font-size:10px;color:var(--red)">⚠ unassigned</span>':''}
+</div>
+</div>
+<button onclick="removeAction(${a.id})" style="background:none;border:none;cursor:pointer;color:var(--faint);padding:4px;margin-left:4px" title="Remove action">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+</button>
+</div>`).join('');
+  const open=ACTIONS.filter(a=>a.status!=='Complete').length;
+  document.getElementById('open-action-count').textContent=open;
+  document.getElementById('action-sub').textContent=`${ACTIONS.length} items · ${ACTIONS.filter(a=>a.priority==='P1').length} P1 critical · assign owners and update status`;
+}
+
+function updateStatus(id,val){
+  const a=ACTIONS.find(x=>x.id===id);if(a)a.status=val;
+  logActivity('James B.','Updated "'+a.text.substring(0,40)+'..." status to '+val,'Just now');
+}
+
+function updateOwner(id,val){
+  const a=ACTIONS.find(x=>x.id===id);if(a){a.owner=val;}
+  if(val)logActivity('James B.','Assigned "'+a.text.substring(0,30)+'..." to '+val,'Just now');
+  renderActions();
+}
+
+function removeAction(id){
+  if(!confirm('Remove this action item?'))return;
+  ACTIONS=ACTIONS.filter(x=>x.id!==id);
+  renderActions();
+}
+
+function addAction(){
+  const text=document.getElementById('new-action-text').value.trim();
+  if(!text){alert('Please enter an action description.');return;}
+  ACTIONS.push({
+    id:nextActionId++,
+    text,
+    dim:document.getElementById('new-action-dim').value,
+    priority:document.getElementById('new-action-pri').value.split(' ')[0],
+    due:document.getElementById('new-action-due').value||'TBD',
+    status:'Not started',owner:'',
+    note:document.getElementById('new-action-notes').value
+  });
+  document.getElementById('new-action-text').value='';
+  document.getElementById('new-action-due').value='';
+  document.getElementById('new-action-notes').value='';
+  logActivity('James B.','Added new action: '+text.substring(0,40),'Just now');
+  renderActions();
+}
+
+// ── REVIEW ──
+function buildSliders(){
+  document.getElementById('sliders').innerHTML=CATS.map(c=>`<div class="sbar-row">
+<span class="sbar-lbl" style="font-size:10px">${c.label} <span style="color:var(--faint)">/${c.weight}</span></span>
+<input type="range" min="0" max="${c.weight}" step="1" value="0" id="sl-${c.id}" oninput="onSlide('${c.id}',this.value,${c.weight})">
+<span class="sbar-num" id="sv-${c.id}" style="color:var(--faint)">0</span>
+</div>`).join('');
+}
+
+function onSlide(id,val,max){
+  fScores[id]=parseInt(val);
+  const p=pct(parseInt(val),max);
+  const sv=document.getElementById('sv-'+id);sv.textContent=val;sv.style.color=gc(p);
+  const t=Object.values(fScores).reduce((a,b)=>a+b,0);
+  document.getElementById('r-total').innerHTML=`${t}<span style="font-size:13px;color:var(--faint);font-weight:400"> /100</span>`;
+  document.getElementById('r-total').style.color=gc(t);
+  document.getElementById('r-grade').textContent=grd(t)+' — '+ro(t);
+}
+
+function prefill(name){
+  const r=COMPANIES.find(x=>x.name===name);if(!r)return;
+  CATS.forEach(c=>{
+    const v=r[c.id];fScores[c.id]=v;
+    const sl=document.getElementById('sl-'+c.id);if(sl)sl.value=v;
+    const sv=document.getElementById('sv-'+c.id);if(sv){sv.textContent=v;sv.style.color=gc(pct(v,c.weight));}
+  });
+  if(document.getElementById('r-pos'))document.getElementById('r-pos').value=r.pos;
+  if(document.getElementById('r-str'))document.getElementById('r-str').value=r.strengths.join('\n');
+  if(document.getElementById('r-gaps'))document.getElementById('r-gaps').value=r.gaps.join('\n');
+  if(document.getElementById('r-stage'))document.getElementById('r-stage').value=r.stage;
+  const t=Object.values(fScores).reduce((a,b)=>a+b,0);
+  document.getElementById('r-total').innerHTML=`${t}<span style="font-size:13px;color:var(--faint);font-weight:400"> /100</span>`;
+  document.getElementById('r-total').style.color=gc(t);
+  document.getElementById('r-grade').textContent=grd(t)+' — '+ro(t);
+}
+
+function saveReview(){
+  const name=document.getElementById('r-co').value;
+  const msg=document.getElementById('save-msg');
+  if(!name){msg.className='save-msg sm-err';msg.style.display='block';msg.textContent='Please select a company first.';setTimeout(()=>msg.style.display='none',3000);return;}
+  const t=Object.values(fScores).reduce((a,b)=>a+b,0);
+  const date=document.getElementById('r-date').value;
+  const reviewer=document.getElementById('r-reviewer').value;
+  msg.className='save-msg sm-ok';msg.style.display='block';
+  msg.textContent=`✓ Review saved: ${name} scored ${t}/100 (${grd(t)}) on ${date} by ${reviewer}`;
+  logActivity(reviewer,`Completed review for ${name} (${t}/100)`,date);
+  setTimeout(()=>msg.style.display='none',5000);
+}
+
+function clearReview(){
+  document.getElementById('r-co').value='';
+  ['r-pos','r-str','r-gaps','r-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  CATS.forEach(c=>{
+    fScores[c.id]=0;
+    const sl=document.getElementById('sl-'+c.id);if(sl)sl.value=0;
+    const sv=document.getElementById('sv-'+c.id);if(sv){sv.textContent='0';sv.style.color='var(--faint)';}
+  });
+  document.getElementById('r-total').innerHTML='0<span style="font-size:13px;color:var(--faint);font-weight:400"> /100</span>';
+  document.getElementById('r-total').style.color='var(--faint)';
+  document.getElementById('r-grade').textContent='';
+}
+
+function exportReview(){
+  const name=document.getElementById('r-co').value||'Company';
+  const t=Object.values(fScores).reduce((a,b)=>a+b,0);
+  const date=document.getElementById('r-date').value;
+  const reviewer=document.getElementById('r-reviewer').value;
+  const pos=document.getElementById('r-pos').value;
+  const notes=document.getElementById('r-notes').value;
+  const str=document.getElementById('r-str').value;
+  const gaps=document.getElementById('r-gaps').value;
+  let lines=[`COMPETITIVE SCORECARD — ${name.toUpperCase()}`,`Reviewed: ${date}  |  Reviewer: ${reviewer}  |  Stage: ${document.getElementById('r-stage').value}`,'='.repeat(52),`Overall score: ${t}/100  (${grd(t)}) — ${ro(t)}`,`Positioning: ${pos}`,'','CATEGORY SCORES'];
+  CATS.forEach(c=>lines.push(`  ${c.label.padEnd(22)} ${fScores[c.id]} / ${c.weight}`));
+  if(str){lines.push('','STRENGTHS');str.split('\n').filter(Boolean).forEach(s=>lines.push('  + '+s));}
+  if(gaps){lines.push('','GAPS');gaps.split('\n').filter(Boolean).forEach(g=>lines.push('  - '+g));}
+  if(notes){lines.push('','NOTES','  '+notes);}
+  const blob=new Blob([lines.join('\n')],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name.replace(/\W/g,'_')+'_Review_'+date.replace(/\//g,'-')+'.txt';a.click();
+}
+
+// ── ADMIN ──
+function renderTeam(){
+  document.getElementById('team-list').innerHTML=TEAM.map(m=>`<div class="team-row">
+<div class="avatar">${m.initials}</div>
+<div class="team-info"><div class="team-name">${m.name}</div><div class="team-email">${m.email}</div></div>
+<div class="team-actions">
+<span class="role-badge ${m.role==='admin'?'rb-admin':m.role==='user'?'rb-user':'rb-viewer'}">${m.role}</span>
+<select style="background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:10px;color:var(--muted);font-family:var(--font)" onchange="changeRole(${m.id},this.value)">
+<option value="admin"${m.role==='admin'?' selected':''}>Admin</option>
+<option value="user"${m.role==='user'?' selected':''}>User</option>
+<option value="viewer"${m.role==='viewer'?' selected':''}>Viewer</option>
+</select>
+${m.id!==1?`<button class="btn btn-r" style="font-size:10px;padding:3px 8px" onclick="removeMember(${m.id})">Remove</button>`:'<span style="font-size:10px;color:var(--faint)">Owner</span>'}
+</div>
+</div>`).join('');
+}
+
+function renderActivity(){
+  document.getElementById('activity-log').innerHTML=ACTIVITY.map(a=>`<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
+<div style="width:26px;height:26px;border-radius:50%;background:var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:var(--muted);flex-shrink:0">${a.who.split(' ').map(w=>w[0]).join('')}</div>
+<div style="flex:1"><div style="font-size:11px;color:var(--muted);line-height:1.4"><strong style="color:var(--white)">${a.who}</strong> ${a.what}</div><div style="font-size:10px;color:var(--faint);margin-top:2px">${a.when}</div></div>
+</div>`).join('');
+}
+
+function changeRole(id,role){
+  const m=TEAM.find(x=>x.id===id);if(m){m.role=role;logActivity('James B.','Changed '+m.name+' role to '+role,'Just now');}renderTeam();
+}
+
+function removeMember(id){
+  const m=TEAM.find(x=>x.id===id);
+  if(!confirm(`Remove ${m.name} from the team?`))return;
+  TEAM=TEAM.filter(x=>x.id!==id);
+  logActivity('James B.','Removed '+m.name+' from team','Just now');
+  renderTeam();renderActivity();
+}
+
+function showInviteModal(){document.getElementById('invite-modal').classList.add('show');}
+function closeModal(){document.getElementById('invite-modal').classList.remove('show');}
+
+function inviteMember(){
+  const name=document.getElementById('inv-name').value.trim();
+  const email=document.getElementById('inv-email').value.trim();
+  const role=document.getElementById('inv-role').value;
+  if(!name||!email){alert('Please enter a name and email.');return;}
+  const initials=name.split(' ').map(w=>w[0]).join('').toUpperCase();
+  TEAM.push({id:Date.now(),name,email,role,initials,joined:'Today'});
+  logActivity('James B.','Invited '+name+' as '+role,'Just now');
+  closeModal();renderTeam();renderActivity();
+  document.getElementById('inv-name').value='';document.getElementById('inv-email').value='';
+}
+
+function logActivity(who,what,when){
+  ACTIVITY.unshift({who,what,when});
+  ACTIVITY=ACTIVITY.slice(0,20);
+  const el=document.getElementById('activity-log');if(el)renderActivity();
+}
+
+// ── INIT ──
+buildRank();
+buildCoList();
+buildCmpPills();
+buildSliders();
+setTimeout(()=>{buildCharts();buildHsVsAvg();renderCmp();},200);
+</script>
+</body>
+</html>
